@@ -12,36 +12,35 @@ def telegramm_base():
     cursor = conn.cursor()
     cursor.execute("""CREATE TABLE IF NOT EXISTS list_1
            (number INTEGER PRIMARY KEY, name TEXT (30), insta TEXT (50), 
-           username TEXT (30), user_id INTEGER (20), age INTEGER (5), qr BLOB)""")
-    cursor.execute('INSERT INTO list_1 (name, insta, username, user_id, age, qr) VALUES (?,?,?,?,?,?)',
-                   (name, insta, username, user_id, age, image))
+           username TEXT (30), user_id INTEGER (20), age INTEGER (5), qr BLOB, a_p TEXT (10))""")
+    cursor.execute('INSERT INTO list_1 (name, insta, username, user_id, age, qr, a_p) VALUES (?,?,?,?,?,?,?)',
+                   (name, insta, username, user_id, age, image, a_p))
     conn.commit()
     conn.close()
 
 
 bot = telebot.TeleBot('5873487596:AAF4SZzKOXe_YyF7_uUoNrWxyyChAEhPb3A')
-# keyboard = [
-#     [InlineKeyboardButton("Кнопка 1", callback_data='button1'),
-#      InlineKeyboardButton("Кнопка 2", callback_data='button2')],
-#     [InlineKeyboardButton("Кнопка 3", callback_data='button3'),
-#      InlineKeyboardButton("Кнопка 4", callback_data='button4')]
-# ]
-#
-# reply_markup = InlineKeyboardMarkup(keyboard)
-#
-# #pinned_message = bot.get_chat(chat_id='6117171405').pinned_message
-#
-# bot.edit_message_reply_markup(chat_id='6117171405', message_id=message_id, reply_markup=reply_markup)
+
+
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    markup = types.ReplyKeyboardMarkup(row_width=3)
+    item1 = types.KeyboardButton("Анкета")
+    item2 = types.KeyboardButton("QR код")
+    item3 = types.KeyboardButton("RSRV столик")
+    item4 = types.KeyboardButton("Меню")
+    item5 = types.KeyboardButton("Сайт")
+    item6 = types.KeyboardButton("Админ")
+    markup.add(item1, item2, item3, item4, item5, item6)
+
+    bot.send_message(message.from_user.id, "Добро пожаловать!", reply_markup=markup)
 
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
     global user_id
     user_id = message.chat.id
-    if message.text == "/start":
-        bot.send_message(message.from_user.id, "Привет! Если ты хочешь участвовать в специальной программе"
-                                               " бара 'МЯТА' с раздачей угощений, то пройди короткую процедуру регистрации."
-                                               " Отправь 'да', если хочешь начать процесс регистрации")
-    elif message.text == "да" or message.text == "Да":
+    if message.text == "Анкета":
+
         conn = sqlite3.connect('tele_table_mint.db')
         cursor = conn.cursor()
         cursor.execute("SELECT user_id FROM list_1")
@@ -51,30 +50,64 @@ def get_text_messages(message):
             ii = str(i)
             if str(user_id) == ii[1:-2]:
                 bot.send_message(message.from_user.id, "Вы уже зарегистрированы")
-                cursor.execute("SELECT qr FROM list_1 WHERE user_id = ?", (user_id,))
-                image_data = cursor.fetchone()[0]
-                bot.send_photo(message.chat.id, photo=image_data)
                 a = a + 1
         if a < 1:
             bot.send_message(message.from_user.id, "Ваше имя (login)?")
             bot.register_next_step_handler(message, get_name)
-    elif message.text == "Все" or message.text == "все":
-        bot.send_message(message.from_user.id, "Зарегистрированы на данный момент:")
+    elif message.text == "QR код":
         conn = sqlite3.connect('tele_table_mint.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT number, name, username FROM list_1")
+        cursor.execute("SELECT user_id FROM list_1")
         res = cursor.fetchall()
+        a = 0
         for i in res:
-            a = str(i)
-            bot.send_message(message.from_user.id, a[1:-1])
+            ii = str(i)
+            if str(user_id) == ii[1:-2]:
+                cursor.execute("SELECT qr FROM list_1 WHERE user_id = ?", (user_id,))
+                image_data = cursor.fetchone()[0]
+                bot.send_photo(message.chat.id, photo=image_data, caption='Ваш QR код')
+                a += 1
+        if a < 1:
+            bot.send_message(message.from_user.id, "Пройдите анкету")
+
+    elif message.text == "Админ":
+        get_admin(message)
+
     elif message.text == "очистить":
-        bot.send_message(message.from_user.id, "данные удалены")
+        bot.send_message(message.from_user.id, "Последняя запись удалена")
         conn = sqlite3.connect('tele_table_mint.db')
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM list_1")
+        cursor.execute("DELETE FROM list_1 WHERE number = (SELECT MAX(number) FROM list_1)")
         conn.commit()
     else:
         bot.send_message(message.from_user.id, "Ну пока...")
+
+def get_admin(message):
+    keyboard = types.InlineKeyboardMarkup()
+    key_active = types.InlineKeyboardButton(text='Активировать', callback_data='active')
+    keyboard.add(key_active)
+    key_remade = types.InlineKeyboardButton(text='Изменить', callback_data='remade')
+    keyboard.add(key_remade)
+    key_list = types.InlineKeyboardButton(text='Список', callback_data='list')
+    keyboard.add(key_list)
+    bot.send_message(message.from_user.id, text="Выберите действие:", reply_markup=keyboard)
+
+
+def get_active(message):
+    conn = sqlite3.connect('tele_table_mint.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM list_1 WHERE user_id = ?", (message.text,))
+    res = cursor.fetchone()
+    if res is not None:
+        record_id = res[0]
+        print(record_id)
+        cursor.execute("UPDATE list_1 SET a_p = ? WHERE number = ?", ('A', record_id))
+        conn.commit()
+        bot.send_message(message.chat.id, f"Статус для пользователя {res[1]} активирован")
+    else:
+        bot.send_message(message.chat.id, "Пользователь не найден в базе данных")
+    conn.close()
+
 
 def get_name(message):
     global name
@@ -91,7 +124,6 @@ def get_insta(message):
 def get_yesorno(message):
     global username
     username = message.from_user.username
-    print(user_id, username)
     if message.text == "да" or message.text == "Да":
         bot.send_message(message.from_user.id, "Ок, спасибо")
         bot.send_message(message.from_user.id, "Последний вопрос. Ваш возраст? Только цифры, можно округлить))")
@@ -114,7 +146,7 @@ def get_age(message):
 def callback_worker(call):
     if call.data == "yes":
         bot.send_message(call.message.chat.id, 'Вы записаны. Получите Ваш QR код. Спасибо')
-        data = [name, insta, username, user_id, age]
+        data = [user_id]
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
         qr.add_data(data)
         qr.make(fit=True)
@@ -125,10 +157,26 @@ def callback_worker(call):
         with open('qr_code.png', 'rb') as f:
             image = f.read()
         bot.send_photo(call.message.chat.id, photo=image)
-
+        global a_p
+        a_p = "P"
         telegramm_base()
 
     elif call.data == "no":
-        bot.send_message(call.message.chat.id, 'Что-то не так? Пишите "да" и повторите регистрацию')
+        bot.send_message(call.message.chat.id, 'Что-то не так? Жмите "Анкета" и повторите регистрацию')
+
+    elif call.data == "active":
+        bot.send_message(call.message.chat.id, "Введите ID клиента")
+        bot.register_next_step_handler(call.message, get_active)
+
+    elif call.data == "list":
+        bot.send_message(call.message.chat.id, "Зарегистрированы на данный момент:")
+        conn = sqlite3.connect('tele_table_mint.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT number, name, username, user_id, a_p FROM list_1")
+        res = cursor.fetchall()
+        for i in res:
+            a = str(i)
+            bot.send_message(call.message.chat.id, a[1:-1])
+
 
 bot.polling(none_stop=True, interval=0)
