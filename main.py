@@ -1,7 +1,8 @@
 import cv2
 from pyzbar.pyzbar import decode
-
-import telegram
+from datetime import datetime
+import schedule
+import time
 import telebot
 from telebot import types
 import sqlite3
@@ -12,9 +13,9 @@ def telegramm_base():
     cursor = conn.cursor()
     cursor.execute("""CREATE TABLE IF NOT EXISTS list_1
            (number INTEGER PRIMARY KEY, name TEXT (30), insta TEXT (50), 
-           username TEXT (30), user_id INTEGER (20), sex TEXT (10), qr BLOB, a_p TEXT (10), sur TEXT (20))""")
-    cursor.execute('INSERT INTO list_1 (name, insta, username, user_id, sex, qr, a_p) VALUES (?,?,?,?,?,?,?)',
-                   (name, insta, username, user_id, sex, image, a_p))
+           username TEXT (30), user_id INTEGER (20), sex TEXT (10), qr BLOB)""")
+    cursor.execute('INSERT INTO list_1 (name, insta, username, user_id, sex, qr) VALUES (?,?,?,?,?,?)',
+                   (name, insta, username, user_id, sex, image))
     conn.commit()
     conn.close()
 
@@ -31,18 +32,10 @@ def send_welcome(message):
     item6 = types.KeyboardButton("📲 Админ")
 
     markup.add(item1, item2, item3, item4, item5, item6)
-    # photo = open('Rasputin_logo_main_gold.png', 'rb')
-    # bot.send_photo(message.from_user.id, photo, caption="Привет, это бот клуба Распутин")
-    # photo.close()
 
     bot.send_message(message.from_user.id, "Добро пожаловать! Это бот клуба RASPUTIN. "
                                            "Заполните короткую анкету и станьте нашим клиентом.", reply_markup=markup)
 
-    # keyboard = types.InlineKeyboardMarkup(row_width=2)
-    # key_rus = types.InlineKeyboardButton(text='Русский', callback_data='rus')
-    # key_engl = types.InlineKeyboardButton(text='English', callback_data='engl')
-    # keyboard.add(key_engl, key_rus)
-    # bot.send_message(message.from_user.id, text="Выберите язык:", reply_markup=keyboard)
 
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
@@ -91,13 +84,13 @@ def get_admin(message):
     keyboard.add(key_scan)
     key_active = types.InlineKeyboardButton(text='Активировать', callback_data='active')
     keyboard.add(key_active)
-    key_passive = types.InlineKeyboardButton(text='Убрать активный статус', callback_data='passive')
-    keyboard.add(key_passive)
+    key_list_grand = types.InlineKeyboardButton(text='Общий список', callback_data='list_grand')
+    keyboard.add(key_list_grand)
     key_del = types.InlineKeyboardButton(text='Удалить пользователя', callback_data='del')
     keyboard.add(key_del)
-    key_present = types.InlineKeyboardButton(text='Добавить угощение', callback_data='present')
+    key_present = types.InlineKeyboardButton(text='Проверка', callback_data='present')
     keyboard.add(key_present)
-    key_list = types.InlineKeyboardButton(text='Список', callback_data='list')
+    key_list = types.InlineKeyboardButton(text='Список активных гостей', callback_data='list')
     keyboard.add(key_list)
     bot.send_message(message.from_user.id, text="Выберите действие:", reply_markup=keyboard)
 
@@ -106,29 +99,44 @@ def get_active(message):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM list_1 WHERE user_id = ?", (message.text,))
     res = cursor.fetchone()
+    conn.close()
     if res is not None:
-
-        record_id = res[0]
-        cursor.execute("UPDATE list_1 SET a_p = ? WHERE number = ?", ('A', record_id))
+        tims = datetime.now().strftime("%H:%M")
+        conn = sqlite3.connect('table_mint_2.db')
+        cursor = conn.cursor()
+        cursor.execute("""CREATE TABLE IF NOT EXISTS list_2
+                   (number INTEGER PRIMARY KEY, name TEXT (30), insta TEXT (50), 
+                   username TEXT (30), user_id INTEGER (20), sex TEXT (10), qr BLOB, time DATETIME, sur TEXT (3))""")
+        cursor.execute('INSERT INTO list_2 (name, insta, username, user_id, sex, qr, time) VALUES (?,?,?,?,?,?,?)',
+                       (res[1], res[2], res[3], res[4], res[5], res[6], tims))
         conn.commit()
+        conn.close()
         bot.send_message(message.chat.id, f"Статус для пользователя {res[1]} активирован")
     else:
-        bot.send_message(message.chat.id, "Пользователь не найден в базе данных")
-    conn.close()
+        bot.send_message(message.chat.id, "Нет такого пользователя")
 
-def get_passive(message):
-    conn = sqlite3.connect('tele_table_mint.db')
+def interval():
+    conn = sqlite3.connect('table_mint_2.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM list_1 WHERE user_id = ?", (message.text,))
-    res = cursor.fetchone()
+    cursor.execute("SELECT * FROM list_2 WHERE time")
+    res = cursor.fetchall()
     if res is not None:
-        record_id = res[0]
-        cursor.execute("UPDATE list_1 SET a_p = ? WHERE number = ?", ('P', record_id))
-        conn.commit()
-        bot.send_message(message.chat.id, f"Активный статус для пользователя {res[1]} убран")
-    else:
-        bot.send_message(message.chat.id, "Пользователь не найден в базе данных")
-    conn.close()
+        t_n = datetime.now().strftime('%H:%M')
+        if t_n > "20:30":
+            cursor.execute("DELETE FROM list_2")
+            conn.commit()
+            conn.close()
+        else:
+            for i in res:
+                time_now = datetime.now().time()
+                time_1 = datetime.strptime(i[7], '%H:%M').time()
+                diff_minutes = (datetime.combine(datetime.today(), time_now) -
+                                datetime.combine(datetime.today(), time_1)).total_seconds() / 60.0
+                if diff_minutes > 10:
+                    record_id = i[0]
+                    cursor.execute("UPDATE list_2 SET sur = ? WHERE number = ?", ('+', record_id))
+            conn.commit()
+            conn.close()
 
 def del_user(message):
     conn = sqlite3.connect('tele_table_mint.db')
@@ -198,8 +206,6 @@ def callback_worker(call):
             with open('qr_code.png', 'rb') as f:
                 image = f.read()
             bot.send_photo(call.message.chat.id, photo=image)
-            global a_p
-            a_p = "P"
             telegramm_base()
 
     elif call.data == "no":
@@ -234,23 +240,42 @@ def callback_worker(call):
         bot.send_message(call.message.chat.id, "Введите ID клиента чтобы присвоить ему активный статус")
         bot.register_next_step_handler(call.message, get_active)
 
-    elif call.data == "passive":
-        bot.send_message(call.message.chat.id, "Введите ID клиента чтобы убрать у него активный статус")
-        bot.register_next_step_handler(call.message, get_passive)
+    elif call.data == "list_grand":
+        bot.send_message(call.message.chat.id, "Всего зарегистрировано:")
+        conn = sqlite3.connect('tele_table_mint.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT number, name, username, user_id, sex FROM list_1")
+        res = cursor.fetchall()
+        for i in res:
+            a = str(i)
+            bot.send_message(call.message.chat.id, a[1:-1])
+        conn.close()
 
     elif call.data == "del":
         bot.send_message(call.message.chat.id, "Введите ID клиента, которого хотите удалить")
         bot.register_next_step_handler(call.message, del_user)
 
+    elif call.data == "present":
+        interval()
+
     elif call.data == "list":
-        bot.send_message(call.message.chat.id, "Зарегистрированы на данный момент:")
-        conn = sqlite3.connect('tele_table_mint.db')
+        bot.send_message(call.message.chat.id, "Активные гости:")
+        conn = sqlite3.connect('table_mint_2.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT number, name, username, user_id, a_p, sex, sur FROM list_1")
+        cursor.execute("SELECT number, name, username, user_id, sex, time, sur FROM list_2")
         res = cursor.fetchall()
-        for i in res:
-            a = str(i)
-            bot.send_message(call.message.chat.id, a[1:-1])
+        if res != []:
+            for i in res:
+                a = str(i)
+                bot.send_message(call.message.chat.id, a[1:-1])
+        else:
+            bot.send_message(call.message.chat.id, "Никого")
+        conn.close()
+
+# schedule.every(5).minutes.do(interval)
+# while True:
+#     schedule.run_pending()
+#     time.sleep(1)
 
 
 bot.polling(none_stop=True, interval=0)
