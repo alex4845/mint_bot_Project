@@ -3,7 +3,6 @@ import qrcode
 from aiogram import Bot, types, executor
 from aiogram.dispatcher import Dispatcher, FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
-import os
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from BD import telegramm_base, get_user, get_info, del_user, act_user, get_info_act, interval, get_user_act, get_sur
 from admin_panel import admin_panel, gender
