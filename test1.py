@@ -23,7 +23,6 @@ async def info(message: types.Message):
     item5 = types.KeyboardButton("🖥 Сайт")
     item6 = types.KeyboardButton("📲 Админ")
     markup.add(item1, item2, item3, item4, item5, item6)
-
     await message.answer('Добро пожаловать! Это бот клуба RASPUTIN.'
                          ' Заполните короткую анкету и получайте от нас угощение./ Welcome!'
                          ' This is the RASPUTIN club bot. Fill out a short questionnaire and'
