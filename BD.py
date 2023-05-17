@@ -3,7 +3,6 @@ from datetime import datetime
 
 async def telegramm_base(state):
     async with state.proxy() as data:
-
         conn = sqlite3.connect('tele_table_mint.db')
         cursor = conn.cursor()
         cursor.execute("""CREATE TABLE IF NOT EXISTS list_1
@@ -17,7 +16,7 @@ async def telegramm_base(state):
 async def get_info():
     conn = sqlite3.connect('tele_table_mint.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT number, name, username, user_id, sex FROM list_1")
+    cursor.execute("SELECT number, name, insta, username, user_id, sex FROM list_1")
     res = cursor.fetchall()
     list = []
     for i in res:
@@ -50,16 +49,17 @@ async def del_user(a):
     return b
 
 async def act_user(b):
-    tims = datetime.now().strftime("%H:%M")
+    tims = datetime.now()
+    sur = '---'
     conn = sqlite3.connect('table_mint_2.db')
     cursor = conn.cursor()
     cursor.execute("""CREATE TABLE IF NOT EXISTS list_2
                       (number INTEGER PRIMARY KEY, name TEXT (30), username TEXT (30), user_id INTEGER (20), 
                       sex TEXT (10), time DATETIME, sur TEXT (3))""")
-    cursor.execute('INSERT INTO list_2 (name, username, user_id, sex, qr, time) VALUES (?,?,?,?,?,?)',
-                   (b[1], b[3], b[4], b[5], b[6], tims))
+    cursor.execute('INSERT INTO list_2 (name, username, user_id, sex, time, sur) VALUES (?,?,?,?,?,?)',
+                   (b[1], b[3], b[4], b[5], tims, sur))
     conn.commit()
-    b = "Пользователь активирован"
+    b = f'Пользователь {b[1]} активирован'
     conn.close()
     return b
 
@@ -71,6 +71,50 @@ async def get_info_act():
     list = []
     for i in res:
         a = str(i)
-        list.append(a[1:-1])
+        list.append(a)
     conn.close()
     return list
+
+async def interval():
+    l = []
+    conn = sqlite3.connect('table_mint_2.db')
+    cursor = conn.cursor()
+    t_n = datetime.now()
+    current_time = datetime.now().replace(hour=22, minute=10, second=0)
+    if t_n > current_time:
+        cursor.execute("DELETE FROM list_2")
+        conn.commit()
+        conn.close()
+    else:
+        cursor.execute("SELECT time, number, user_id FROM list_2 WHERE sur = ?", ("---",))
+        res = cursor.fetchall()
+        if res:
+            for i in res:
+                time_1 = datetime.strptime(str(i[0]), "%Y-%m-%d %H:%M:%S.%f")
+                diff_minutes = t_n - time_1
+                minutes = diff_minutes.total_seconds() // 60
+                if minutes > 1:
+                    cursor.execute("UPDATE list_2 SET sur = ? WHERE number = ?", ('+', i[1]))
+                    l.append(i[2])
+                conn.commit()
+            conn.close()
+            return l
+
+async def get_user_act(a):
+    conn = sqlite3.connect('table_mint_2.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM list_2 WHERE user_id = ?", (a,))
+    res = cursor.fetchone()
+    conn.close()
+    return res
+
+async def get_sur(b):
+    tims = datetime.now()
+    conn = sqlite3.connect('table_mint_2.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE list_2 SET sur = ? WHERE number = ?", ('---', b[0]))
+    cursor.execute("UPDATE list_2 SET time = ? WHERE number = ?", (tims, b[0]))
+    conn.commit()
+    conn.close()
+    res = "Угощение получено"
+    return res
