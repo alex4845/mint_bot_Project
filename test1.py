@@ -1,10 +1,11 @@
+import asyncio
 
 import qrcode
 from aiogram import Bot, types, executor
 from aiogram.dispatcher import Dispatcher, FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from BD import telegramm_base, get_user, get_info, del_user, act_user, get_info_act, interval, get_user_act, get_sur
+from BD import telegramm_base, get_user, get_info, del_user, get_info_act, interval, get_user_act, get_sur
 from admin_panel import admin_panel, gender
 
 storage = MemoryStorage()
@@ -15,7 +16,7 @@ dp = Dispatcher(bot, storage=storage)
 @dp.message_handler(commands=['start'])
 async def info(message: types.Message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-    item1 = types.KeyboardButton("📋 Анкета")
+    item1 = types.KeyboardButton("📋 Зарегистрироваться")
     item2 = types.KeyboardButton("🐈 QR код")
     item3 = types.KeyboardButton("RSRV столик")
     item4 = types.KeyboardButton("🍸 Меню")
@@ -35,15 +36,15 @@ class FSMclient(StatesGroup):
 class FSMadmin(StatesGroup):
     id = State()
 
-class FSMadmin1(StatesGroup):
-    act = State()
+# class FSMadmin1(StatesGroup):
+#     act = State()
 
 class FSMsur(StatesGroup):
     ssur = State()
 
 @dp.message_handler(content_types=types.ContentTypes.TEXT, state=None)
 async def get_start(message: types.Message):
-    if message.text == '📋 Анкета':
+    if message.text == '📋 Зарегистрироваться':
         a = message.chat.id
         res = await get_user(a)
         if res == None:
@@ -120,23 +121,23 @@ async def del_us(message: types.Message, state: FSMContext):
     await message.answer(res)
     await state.finish()
 
-@dp.callback_query_handler(lambda c: c.data == 'button3')
-async def process_button3(callback_query: types.CallbackQuery):
-    await FSMadmin1.act.set()
-    await bot.send_message(callback_query.from_user.id, text='Введите ID клиента для активации')
-
-@dp.message_handler(content_types=['text'], state=FSMadmin1.act)
-async def act_us(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        data['act'] = message.text
-        a = data['act']
-        b = await get_user(a)
-        if b == None:
-            await message.answer("Пользователь не найден в базе данных")
-        else:
-            res = await act_user(b)
-            await message.answer(res)
-    await state.finish()
+# @dp.callback_query_handler(lambda c: c.data == 'button3')
+# async def process_button3(callback_query: types.CallbackQuery):
+#     await FSMadmin1.act.set()
+#     await bot.send_message(callback_query.from_user.id, text='Введите ID клиента для активации')
+#
+# @dp.message_handler(content_types=['text'], state=FSMadmin1.act)
+# async def act_us(message: types.Message, state: FSMContext):
+#     async with state.proxy() as data:
+#         data['act'] = message.text
+#         a = data['act']
+#         b = await get_user(a)
+#         if b == None:
+#             await message.answer("Пользователь не найден в базе данных")
+#         else:
+#             res = await act_user(b)
+#             await message.answer(res)
+#     await state.finish()
 
 @dp.callback_query_handler(lambda c: c.data == 'button4')
 async def process_button4(callback_query: types.CallbackQuery):
@@ -148,13 +149,13 @@ async def process_button4(callback_query: types.CallbackQuery):
     else:
         await bot.send_message(callback_query.from_user.id, text="Активированных нет")
 
-@dp.callback_query_handler(lambda c: c.data == 'button5')
-async def process_button5(callback_query: types.CallbackQuery):
-    l_sur = await interval()
-    if l_sur:
-        for i in l_sur:
-            await bot.send_message(i, 'Вам угощение!')
-    await bot.send_message(callback_query.from_user.id, text="Синхронизация произведена")
+# @dp.callback_query_handler(lambda c: c.data == 'button5')
+# async def process_button5(callback_query: types.CallbackQuery):
+#     l_sur = await interval()
+#     if l_sur:
+#         for i in l_sur:
+#             await bot.send_message(i, 'Вам угощение!')
+#     await bot.send_message(callback_query.from_user.id, text="Синхронизация произведена")
 
 @dp.callback_query_handler(lambda c: c.data == 'button6')
 async def process_button6(callback_query: types.CallbackQuery):
@@ -177,6 +178,18 @@ async def act_us(message: types.Message, state: FSMContext):
                 await message.answer(res)
     await state.finish()
 
-executor.start_polling(dp)
+async def scheduled(wait_for):
+    while True:
+        await asyncio.sleep(wait_for)
+        l_sur = await interval()
+        if l_sur:
+            for i in l_sur:
+                await bot.send_message(i, 'Вам угощение!')
+
+loop = asyncio.get_event_loop()
+loop.create_task(scheduled(60))
+executor.start_polling(dp, loop=loop, skip_updates=True)
+
+
 
 
