@@ -69,7 +69,7 @@ async def del_user(a):
 async def get_info_act():
     conn = sqlite3.connect('table_mint_2.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT number, name, username, user_id, sex, time, sur, w_c, w_s, vin FROM list_2")
+    cursor.execute("SELECT number, name, username, user_id, sex, time, sur, w_c, w_s, vin, manager FROM list_2")
     res = cursor.fetchall()
     list = []
     for i in res:
@@ -84,16 +84,16 @@ async def interval():
     cursor = conn.cursor()
     t_n = datetime.now()
     t_n1 = datetime.now().strftime("%Y-%m-%d")
-    current_time = datetime.now().replace(hour=14, minute=00, second=0)
-    current_time1 = datetime.now().replace(hour=14, minute=20, second=0)
+    current_time = datetime.now().replace(hour=0, minute=23, second=0)
+    current_time1 = datetime.now().replace(hour=0, minute=40, second=0)
     if t_n > current_time and t_n < current_time1:
-        folder_name = "reports"
-        filename = f'Отчет_{t_n1}.xlsx'
-        folder_path = os.path.join(os.getcwd(), folder_name)
-        file_path = os.path.join(folder_path, filename)
-        if not os.path.isfile(filename):
-            cursor.execute('SELECT * FROM list_2')
-            data = cursor.fetchall()
+        cursor.execute('SELECT * FROM list_2')
+        data = cursor.fetchall()
+        if data:
+            folder_name = "reports"
+            filename = f'Отчет_{t_n1}.xlsx'
+            folder_path = os.path.join(os.getcwd(), folder_name)
+            file_path = os.path.join(folder_path, filename)
             workbook = Workbook()
             sheet = workbook.active
             for row_index, row_data in enumerate(data, start=1):
@@ -105,7 +105,7 @@ async def interval():
 
             cursor.execute("DELETE FROM list_2")
             conn.commit()
-            conn.close()
+        conn.close()
     else:
         cursor.execute("SELECT time, number, user_id, w_c, w_s, vin FROM list_2 WHERE sur = ?", ("---",))
         res = cursor.fetchall()
@@ -141,3 +141,16 @@ async def get_sur(b):
     conn.close()
     res = "Угощение получено"
     return res
+
+async def write_manager(a, u):
+    conn = sqlite3.connect('table_mint_2.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM list_2 WHERE user_id = ?", (u,))
+    res = cursor.fetchone()
+    if res:
+        cursor.execute("UPDATE list_2 SET manager = ? WHERE user_id = ?", (a, u))
+        conn.commit()
+        conn.close()
+        return f"Ваш менеджер {a}. Спасибо."
+    else:
+        return "Вы не активированы и не можете выбрать менеджера"

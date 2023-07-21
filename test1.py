@@ -5,8 +5,8 @@ from aiogram import Bot, types, executor
 from aiogram.dispatcher import Dispatcher, FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from BD import telegramm_base, get_user, get_info, del_user, get_info_act, interval, get_user_act, get_sur
-from admin_panel import admin_panel, gender
+from BD import telegramm_base, get_user, get_info, del_user, get_info_act, interval, get_user_act, get_sur, write_manager
+from admin_panel import admin_panel, gender, get_manager
 
 storage = MemoryStorage()
 
@@ -20,7 +20,7 @@ async def info(message: types.Message):
     item2 = types.KeyboardButton("🐈 QR код")
     item3 = types.KeyboardButton("RSRV столик")
     item4 = types.KeyboardButton("🍸 Меню")
-    item5 = types.KeyboardButton("🖥 Сайт")
+    item5 = types.KeyboardButton("🖥 Best Manager")
     item6 = types.KeyboardButton("📲 Админ")
     markup.add(item1, item2, item3, item4, item5, item6)
     await message.answer('Добро пожаловать! Это бот клуба RASPUTIN.'
@@ -63,6 +63,9 @@ async def get_start(message: types.Message):
         a = message.chat.id
         res = await get_user(a)
         await bot.send_photo(message.chat.id, photo=res[6], caption="Ваш QR код")
+
+    if message.text == '🖥 Best Manager':
+        await get_manager(message)
 
 @dp.message_handler(content_types=['text'], state=FSMclient.name)
 async def get_name(message: types.Message, state: FSMContext):
@@ -111,6 +114,15 @@ async def process_button1(callback_query: types.CallbackQuery):
 async def process_button2(callback_query: types.CallbackQuery):
     await FSMadmin.id.set()
     await bot.send_message(callback_query.from_user.id, text='Введите ID клиента, которого хотите удалить')
+
+@dp.callback_query_handler(lambda c: c.data in ['man1', 'man2', 'man3', 'man4', 'man5'])
+async def process_button2(callback_query: types.CallbackQuery):
+    await bot.delete_message(chat_id=callback_query.message.chat.id, message_id=callback_query.message.message_id)
+    a = callback_query.data
+    u = callback_query.from_user.id
+    r = await write_manager(a, u)
+    await bot.send_message(callback_query.from_user.id, text=r)
+
 
 @dp.message_handler(content_types=['text'], state=FSMadmin.id)
 async def del_us(message: types.Message, state: FSMContext):

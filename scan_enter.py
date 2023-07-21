@@ -43,7 +43,7 @@ while True:
                 cursor.execute("""CREATE TABLE IF NOT EXISTS list_2
                                                        (number INTEGER PRIMARY KEY, name TEXT (30), username TEXT (30), 
                                                        user_id INTEGER (20), sex TEXT (10), time DATETIME, sur TEXT (3), 
-                                                       w_c INTEGER (2), w_s INTEGER (2), vin INTEGER (2))""")
+                                                       w_c INTEGER (2), w_s INTEGER (2), vin INTEGER (2), manager TEXT (15))""")
                 cursor.execute("SELECT * FROM list_2 WHERE user_id = ?", (data,))
                 res2 = cursor.fetchone()
                 if res2:
@@ -54,8 +54,8 @@ while True:
                         sur = 'нет'
                     sur_select = '0'
                     cursor.execute(
-                        'INSERT INTO list_2 (name, username, user_id, sex, time, sur, w_c, w_s, vin) VALUES (?,?,?,?,?,?,?,?,?)',
-                        (res[1], res[3], res[4], res[5], tims, sur, sur_select, sur_select, sur_select))
+                        'INSERT INTO list_2 (name, username, user_id, sex, time, sur, w_c, w_s, vin, manager) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                        (res[1], res[3], res[4], res[5], tims, sur, sur_select, sur_select, sur_select, "--"))
                     conn.commit()
                     conn.close()
                     window_info('photo_2023-05-19_21-45-51.jpg')
