@@ -1,8 +1,8 @@
 import sys
 from datetime import datetime
-import sqlite3
 
 import cv2
+import psycopg2
 from pyzbar.pyzbar import decode
 import pygame
 import time
@@ -19,11 +19,14 @@ while True:
             data = code.data.decode('utf-8')
             scanned = True
 
-            conn = sqlite3.connect('tele_table_mint.db')
+            #conn = sqlite3.connect('tele_table_mint.db')
+            conn = psycopg2.connect(host='141.8.199.12', port=5432, user='postgres',
+                                    password='20rasputin23', database='rasputin_base.db')
+
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM list_1 WHERE user_id = ?", (data,))
+            cursor.execute("SELECT * FROM list_1 WHERE user_id = %s", (data,))
             res = cursor.fetchone()
-            conn.close()
+            #conn.close()
 
             def window_info(a):
                 pygame.init()
@@ -38,27 +41,38 @@ while True:
             if res:
                 tims = datetime.now()
                 sur = '---'
-                conn = sqlite3.connect('table_mint_2.db')
                 cursor = conn.cursor()
                 cursor.execute("""CREATE TABLE IF NOT EXISTS list_2
-                                                       (number INTEGER PRIMARY KEY, name TEXT (30), username TEXT (30), 
-                                                       user_id INTEGER (20), sex TEXT (10), time DATETIME, sur TEXT (3), 
-                                                       w_c INTEGER (2), w_s INTEGER (2), vin INTEGER (2), manager TEXT (15))""")
-                cursor.execute("SELECT * FROM list_2 WHERE user_id = ?", (data,))
+                                                       (number SERIAL PRIMARY KEY, name VARCHAR, username VARCHAR, 
+                                                       user_id NUMERIC(20), sex VARCHAR, time TIMESTAMP, sur VARCHAR, 
+                                                       w_c NUMERIC(2), w_s NUMERIC(2), vin NUMERIC(2), manager VARCHAR)""")
+                cursor.execute("SELECT * FROM list_2 WHERE user_id = %s", (data,))
                 res2 = cursor.fetchone()
                 if res2:
                     window_info('photo_2023-05-19_21-57-41.jpg')
                 else:
-                    r = button_yes_no()
-                    if r == "Нет":
+                    if res[5] == "Ж":
+                        r = button_yes_no()
+                        if r == "Нет":
+                            sur = 'нет'
+                        sur_select = '0'
+                        cursor.execute(
+                            'INSERT INTO list_2 (name, username, user_id, sex, time, sur, w_c, w_s, vin, manager)'
+                            ' VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                            (res[1], res[3], res[4], res[5], tims, sur, sur_select, sur_select, sur_select, res[-1]))
+                        conn.commit()
+                        conn.close()
+                        window_info('photo_2023-05-19_21-45-51.jpg')
+                    else:
                         sur = 'нет'
-                    sur_select = '0'
-                    cursor.execute(
-                        'INSERT INTO list_2 (name, username, user_id, sex, time, sur, w_c, w_s, vin, manager) VALUES (?,?,?,?,?,?,?,?,?,?)',
-                        (res[1], res[3], res[4], res[5], tims, sur, sur_select, sur_select, sur_select, "--"))
-                    conn.commit()
-                    conn.close()
-                    window_info('photo_2023-05-19_21-45-51.jpg')
+                        sur_select = '0'
+                        cursor.execute(
+                            'INSERT INTO list_2 (name, username, user_id, sex, time, sur, w_c, w_s, vin, manager) '
+                            'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                            (res[1], res[3], res[4], res[5], tims, sur, sur_select, sur_select, sur_select, res[-1]))
+                        conn.commit()
+                        conn.close()
+                        window_info('photo_2023-05-19_21-45-51.jpg')
 
             else:
                 window_info('photo_2023-05-19_22-32-12.jpg')

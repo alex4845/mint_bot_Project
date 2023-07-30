@@ -1,11 +1,13 @@
 import asyncio
+import os
 
 import qrcode
+from datetime import datetime
 from aiogram import Bot, types, executor
 from aiogram.dispatcher import Dispatcher, FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from BD import telegramm_base, get_user, get_info, del_user, get_info_act, interval, get_user_act, get_sur, write_manager
+from BD import telegramm_base, get_user, get_info, del_user, get_info_act, interval, write_manager
 from admin_panel import admin_panel, gender, get_manager
 
 storage = MemoryStorage()
@@ -20,13 +22,11 @@ async def info(message: types.Message):
     item2 = types.KeyboardButton("🐈 QR код")
     item3 = types.KeyboardButton("RSRV столик")
     item4 = types.KeyboardButton("🍸 Меню")
-    item5 = types.KeyboardButton("🖥 Best Manager")
+    item5 = types.KeyboardButton("⭐ Best Manager")
     item6 = types.KeyboardButton("📲 Админ")
     markup.add(item1, item2, item3, item4, item5, item6)
     await message.answer('Добро пожаловать! Это бот клуба RASPUTIN.'
-                         ' Заполните короткую анкету и получайте от нас угощение./ Welcome!'
-                         ' This is the RASPUTIN club bot. Fill out a short questionnaire and'
-                         ' receive treats from us."', reply_markup=markup)
+                         ' Заполните короткую анкету и получайте от нас угощение.', reply_markup=markup)
 
 class FSMclient(StatesGroup):
     name = State()
@@ -36,12 +36,6 @@ class FSMclient(StatesGroup):
 class FSMadmin(StatesGroup):
     id = State()
 
-# class FSMadmin1(StatesGroup):
-#     act = State()
-
-class FSMsur(StatesGroup):
-    ssur = State()
-
 @dp.message_handler(content_types=types.ContentTypes.TEXT, state=None)
 async def get_start(message: types.Message):
     if message.text == '📋 Зарегистрироваться':
@@ -49,30 +43,61 @@ async def get_start(message: types.Message):
         res = await get_user(a)
         if res == None:
             await FSMclient.name.set()
-            await message.reply('Ваше имя (логин)/ Your name (username)')
+            await message.reply('Ваше имя (логин)')
         else:
-            await message.reply('Вы уже зарегистрированы/ You are already registered')
+            await message.reply('Вы уже зарегистрированы')
 
     if message.text == '📲 Админ':
-        if message.chat.id == 469632258:
+        if message.chat.id == 469632258 or message.chat.id == 686296818:
             await admin_panel(message)
         else:
-            await message.answer('Извините, вы не админ/ Sorry, you are not an admin')
+            await message.answer('Извините, вы не админ')
 
     if message.text == '🐈 QR код':
         a = message.chat.id
         res = await get_user(a)
         await bot.send_photo(message.chat.id, photo=res[6], caption="Ваш QR код")
 
-    if message.text == '🖥 Best Manager':
-        await get_manager(message)
+    if message.text == '⭐ Best Manager':
+        a = message.chat.id
+        res = await get_user(a)
+        if res:
+            if res[5] != "Ж":
+                await message.answer('Извините, вам эта функция не доступна')
+            else:
+                await get_manager(message)
+        else:
+            await message.answer("Пройдите пожалуйста регистрацию")
+
+    if message.text == 'RSRV столик':
+        await message.answer("Для заказа столика свяжитесь с нашим администратором https://t.me/endry_7979")
+
+    if message.text == '🍸 Меню':
+        with open('menu_foto/photo_2023-07-30_12-07-50.jpg', 'rb') as f1:
+            image = f1.read()
+        await bot.send_photo(message.chat.id, photo=image, caption="Вашему вниманию - следующие напитки:")
+        with open('menu_foto/photo_2023-07-30_12-54-41.jpg', 'rb') as f2:
+            image1 = f2.read()
+        with open('menu_foto/photo_2023-07-30_12-54-48.jpg', 'rb') as f3:
+            image2 = f3.read()
+        with open('menu_foto/photo_2023-07-30_13-07-00.jpg', 'rb') as f4:
+            image3 = f4.read()
+        with open('menu_foto/photo_2023-07-30_13-07-11.jpg', 'rb') as f5:
+            image4 = f5.read()
+        with open('menu_foto/photo_2023-07-30_13-07-17.jpg', 'rb') as f6:
+            image5 = f6.read()
+        await bot.send_photo(message.chat.id, photo=image1, caption="Крепкие напитки")
+        await bot.send_photo(message.chat.id, photo=image2, caption="Крепкие напитки")
+        await bot.send_photo(message.chat.id, photo=image3, caption="Вино, пиво")
+        await bot.send_photo(message.chat.id, photo=image4, caption="Коктейли")
+        await bot.send_photo(message.chat.id, photo=image5, caption="Коктейли")
 
 @dp.message_handler(content_types=['text'], state=FSMclient.name)
 async def get_name(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['name'] = message.text
     await FSMclient.next()
-    await message.reply('Ваш инстаграмм/ Your instagram')
+    await message.reply('Ваш инстаграмм')
 
 @dp.message_handler(content_types=['text'], state=FSMclient.insta)
 async def get_insta(message: types.Message, state: FSMContext):
@@ -116,13 +141,12 @@ async def process_button2(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.from_user.id, text='Введите ID клиента, которого хотите удалить')
 
 @dp.callback_query_handler(lambda c: c.data in ['man1', 'man2', 'man3', 'man4', 'man5'])
-async def process_button2(callback_query: types.CallbackQuery):
+async def process_manager(callback_query: types.CallbackQuery):
     await bot.delete_message(chat_id=callback_query.message.chat.id, message_id=callback_query.message.message_id)
     a = callback_query.data
     u = callback_query.from_user.id
     r = await write_manager(a, u)
     await bot.send_message(callback_query.from_user.id, text=r)
-
 
 @dp.message_handler(content_types=['text'], state=FSMadmin.id)
 async def del_us(message: types.Message, state: FSMContext):
@@ -132,24 +156,6 @@ async def del_us(message: types.Message, state: FSMContext):
         res = await del_user(a)
     await message.answer(res)
     await state.finish()
-
-# @dp.callback_query_handler(lambda c: c.data == 'button3')
-# async def process_button3(callback_query: types.CallbackQuery):
-#     await FSMadmin1.act.set()
-#     await bot.send_message(callback_query.from_user.id, text='Введите ID клиента для активации')
-#
-# @dp.message_handler(content_types=['text'], state=FSMadmin1.act)
-# async def act_us(message: types.Message, state: FSMContext):
-#     async with state.proxy() as data:
-#         data['act'] = message.text
-#         a = data['act']
-#         b = await get_user(a)
-#         if b == None:
-#             await message.answer("Пользователь не найден в базе данных")
-#         else:
-#             res = await act_user(b)
-#             await message.answer(res)
-#     await state.finish()
 
 @dp.callback_query_handler(lambda c: c.data == 'button4')
 async def process_button4(callback_query: types.CallbackQuery):
@@ -161,42 +167,20 @@ async def process_button4(callback_query: types.CallbackQuery):
     else:
         await bot.send_message(callback_query.from_user.id, text="Активированных нет")
 
-# @dp.callback_query_handler(lambda c: c.data == 'button5')
-# async def process_button5(callback_query: types.CallbackQuery):
-#     l_sur = await interval()
-#     if l_sur:
-#         for i in l_sur:
-#             await bot.send_message(i, 'Вам угощение!')
-#     await bot.send_message(callback_query.from_user.id, text="Синхронизация произведена")
-
-@dp.callback_query_handler(lambda c: c.data == 'button6')
-async def process_button6(callback_query: types.CallbackQuery):
-    await FSMsur.ssur.set()
-    await bot.send_message(callback_query.from_user.id, text='Введите ID клиента чтобы выдать ему угощение')
-
-@dp.message_handler(content_types=['text'], state=FSMsur.ssur)
-async def act_us(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        data['sur'] = message.text
-        a = data['sur']
-        b = await get_user_act(a)
-        if b == None:
-            await message.answer("Пользователь не найден в базе данных")
-        else:
-            if b[6] == "---":
-                await message.answer("У этого пользователя нет угощения")
-            else:
-                res = await get_sur(b)
-                await message.answer(res)
-    await state.finish()
-
 async def scheduled(wait_for):
     while True:
         await asyncio.sleep(wait_for)
         l_sur = await interval()
         if l_sur:
-            for i in l_sur:
-                await bot.send_message(i, 'Вам угощение!')
+            if l_sur == "fin":
+                chat_id = 469632258 # кому отправлять отчет
+                t_n1 = datetime.now().strftime("%Y-%m-%d")
+                filename = f'Отчет_{t_n1}.xlsx'
+                with open(f'reports/{filename}', 'rb') as file:
+                    await bot.send_document(chat_id=chat_id, document=file)
+            else:
+                for i in l_sur:
+                    await bot.send_message(i, 'Вам угощение!')
 
 loop = asyncio.get_event_loop()
 loop.create_task(scheduled(60))
