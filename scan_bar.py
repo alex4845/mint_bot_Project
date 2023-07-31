@@ -1,6 +1,6 @@
 import sys
 
-import sqlite3
+import psycopg2
 from datetime import datetime
 import cv2
 from pyzbar.pyzbar import decode
@@ -19,9 +19,11 @@ while True:
             data = code.data.decode('utf-8')
             scanned = True
 
-            conn = sqlite3.connect('table_mint_2.db')
+            conn = psycopg2.connect(host='141.8.199.12', port=5432, user='postgres',
+                                    password='20rasputin23', database='rasputin_base.db')
+
             cursor = conn.cursor()
-            cursor.execute("SELECT number, sur, w_c, w_s, vin FROM list_2 WHERE user_id = ?", (data,))
+            cursor.execute("SELECT number, sur, w_c, w_s, vin FROM list_2 WHERE user_id = %s", (data,))
             res = cursor.fetchone()
 
             def window_info(a):
@@ -39,13 +41,13 @@ while True:
                     tims = datetime.now()
                     r = button_sur()
                     if r == "Виски кола":
-                        cursor.execute("UPDATE list_2 SET w_c = ? WHERE number = ?", (int(res[2]) + 1, res[0]))
+                        cursor.execute("UPDATE list_2 SET w_c = %s WHERE number = %s", (int(res[2]) + 1, res[0]))
                     elif r == "Виски сок":
-                        cursor.execute("UPDATE list_2 SET w_s = ? WHERE number = ?", (int(res[3]) + 1, res[0]))
+                        cursor.execute("UPDATE list_2 SET w_s = %s WHERE number = %s", (int(res[3]) + 1, res[0]))
                     elif r == "Вино":
-                        cursor.execute("UPDATE list_2 SET vin = ? WHERE number = ?", (int(res[4]) + 1, res[0]))
-                    cursor.execute("UPDATE list_2 SET sur = ? WHERE number = ?", ('---', res[0]))
-                    cursor.execute("UPDATE list_2 SET time = ? WHERE number = ?", (tims, res[0]))
+                        cursor.execute("UPDATE list_2 SET vin = %s WHERE number = %s", (int(res[4]) + 1, res[0]))
+                    cursor.execute("UPDATE list_2 SET sur = %s WHERE number = %s", ('---', res[0]))
+                    cursor.execute("UPDATE list_2 SET time = %s WHERE number = %s", (tims, res[0]))
                     conn.commit()
                     conn.close()
                     window_info('photo_2023-05-31_16-24-01.jpg')

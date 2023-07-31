@@ -1,4 +1,5 @@
 import asyncio
+import io
 import os
 
 import qrcode
@@ -74,23 +75,27 @@ async def get_start(message: types.Message):
 
     if message.text == '🍸 Меню':
         with open('menu_foto/photo_2023-07-30_12-07-50.jpg', 'rb') as f1:
-            image = f1.read()
+            image = io.BytesIO(f1.read())
         await bot.send_photo(message.chat.id, photo=image, caption="Вашему вниманию - следующие напитки:")
         with open('menu_foto/photo_2023-07-30_12-54-41.jpg', 'rb') as f2:
-            image1 = f2.read()
+            image1 = io.BytesIO(f2.read())
+
         with open('menu_foto/photo_2023-07-30_12-54-48.jpg', 'rb') as f3:
-            image2 = f3.read()
+             image2 = io.BytesIO(f3.read())
         with open('menu_foto/photo_2023-07-30_13-07-00.jpg', 'rb') as f4:
-            image3 = f4.read()
+             image3 = io.BytesIO(f4.read())
         with open('menu_foto/photo_2023-07-30_13-07-11.jpg', 'rb') as f5:
-            image4 = f5.read()
+             image4 = io.BytesIO(f5.read())
         with open('menu_foto/photo_2023-07-30_13-07-17.jpg', 'rb') as f6:
-            image5 = f6.read()
-        await bot.send_photo(message.chat.id, photo=image1, caption="Крепкие напитки")
-        await bot.send_photo(message.chat.id, photo=image2, caption="Крепкие напитки")
-        await bot.send_photo(message.chat.id, photo=image3, caption="Вино, пиво")
-        await bot.send_photo(message.chat.id, photo=image4, caption="Коктейли")
-        await bot.send_photo(message.chat.id, photo=image5, caption="Коктейли")
+             image5 = io.BytesIO(f6.read())
+        media = [
+            types.InputMediaPhoto(media=image1, caption="Крепкие напитки"),
+            types.InputMediaPhoto(media=image2, caption="Крепкие напитки"),
+            types.InputMediaPhoto(media=image3, caption="Вино, пиво"),
+            types.InputMediaPhoto(media=image4, caption="Коктейли"),
+            types.InputMediaPhoto(media=image5, caption="Коктейли"),
+        ]
+        await bot.send_media_group(message.chat.id, media=media)
 
 @dp.message_handler(content_types=['text'], state=FSMclient.name)
 async def get_name(message: types.Message, state: FSMContext):
@@ -131,9 +136,8 @@ async def process_button1_0(callback_query: types.CallbackQuery, state: FSMConte
 @dp.callback_query_handler(lambda c: c.data == 'button1')
 async def process_button1(callback_query: types.CallbackQuery):
     a = await get_info()
-    await bot.send_message(callback_query.from_user.id, text='Все:')
-    for i in a:
-        await bot.send_message(callback_query.from_user.id, text=i)
+    await bot.send_message(callback_query.from_user.id, text=f'Всех зарегистрированных: {a[0][0]}. Из них мужчин: '
+                                                             f'{a[1][0]}. Женщин: {a[2][0]}')
 
 @dp.callback_query_handler(lambda c: c.data == 'button2')
 async def process_button2(callback_query: types.CallbackQuery):
@@ -163,7 +167,8 @@ async def process_button4(callback_query: types.CallbackQuery):
     if a:
         await bot.send_message(callback_query.from_user.id, text="Активированы:")
         for i in a:
-            await bot.send_message(callback_query.from_user.id, text=i[1:-1])
+            await bot.send_message(callback_query.from_user.id, text=f"{i[0]}, {i[1]}, {i[2]}, {i[3]}, {i[4]}, {i[5]},"
+                                                                     f"{i[6]}, {i[7]}, {i[8]}, {i[9]}")
     else:
         await bot.send_message(callback_query.from_user.id, text="Активированных нет")
 
@@ -180,10 +185,10 @@ async def scheduled(wait_for):
                     await bot.send_document(chat_id=chat_id, document=file)
             else:
                 for i in l_sur:
-                    await bot.send_message(i, 'Вам угощение!')
+                    await bot.send_message(i, 'Вам угощение! Уточняйте на баре. Приятного отдыха!')
 
 loop = asyncio.get_event_loop()
-loop.create_task(scheduled(60))
+loop.create_task(scheduled(300))
 executor.start_polling(dp, loop=loop, skip_updates=True)
 
 

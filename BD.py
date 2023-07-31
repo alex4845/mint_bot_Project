@@ -7,7 +7,6 @@ from openpyxl.utils import get_column_letter
 
 async def telegramm_base(state):
     async with state.proxy() as data:
-        #conn = sqlite3.connect('tele_table_mint.db')
         conn = psycopg2.connect(host='141.8.199.12', port=5432, user='postgres',
                                 password='20rasputin23', database='rasputin_base.db')
         cursor = conn.cursor()
@@ -22,15 +21,19 @@ async def telegramm_base(state):
         conn.close()
 
 async def get_info():
+    list = []
     conn = psycopg2.connect(host='141.8.199.12', port=5432, user='postgres',
                             password='20rasputin23', database='rasputin_base.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT number, name, insta, username, user_id, sex, manager FROM list_1")
-    res = cursor.fetchall()
-    list = []
-    for i in res:
-        a = str(i)
-        list.append(a[1:-1])
+    cursor.execute("SELECT COUNT (*) FROM list_1")
+    r = cursor.fetchone()
+    list.append(r)
+    cursor.execute("SELECT COUNT (*) FROM list_1 WHERE sex = 'М'")
+    r1 = cursor.fetchone()
+    list.append(r1)
+    cursor.execute("SELECT COUNT (*) FROM list_1 WHERE sex = 'Ж'")
+    r2 = cursor.fetchone()
+    list.append(r2)
     conn.close()
     return list
 
@@ -63,14 +66,10 @@ async def get_info_act():
     conn = psycopg2.connect(host='141.8.199.12', port=5432, user='postgres',
                             password='20rasputin23', database='rasputin_base.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT number, name, username, user_id, sex, time, sur, w_c, w_s, vin, manager FROM list_2")
+    cursor.execute("SELECT number, name, username, user_id, sex, sur, w_c, w_s, vin, manager FROM list_2")
     res = cursor.fetchall()
-    list = []
-    for i in res:
-        a = str(i)
-        list.append(a)
     conn.close()
-    return list
+    return res
 
 async def interval():
     l = []
@@ -79,7 +78,7 @@ async def interval():
     cursor = conn.cursor()
     t_n = datetime.now()
     t_n1 = datetime.now().strftime("%Y-%m-%d")
-    current_time = datetime.now().replace(hour=21, minute=8, second=0) #конец работы
+    current_time = datetime.now().replace(hour=7, minute=0, second=0) #конец работы
     current_time1 = datetime.now().replace(hour=22, minute=30, second=0) #начало работы
     if t_n > current_time and t_n < current_time1:
         cursor.execute('SELECT * FROM list_2')
@@ -124,12 +123,12 @@ async def interval():
         res = cursor.fetchall()
         if res:
             for i in res:
-                if int(i[3]) + int(i[4]) + int(i[5]) >= 3: #Максимум угощений
+                if int(i[3]) + int(i[4]) + int(i[5]) >= 5: #Максимум угощений
                     continue
                 time_1 = datetime.strptime(str(i[0]), "%Y-%m-%d %H:%M:%S.%f")
                 diff_minutes = t_n - time_1
                 minutes = diff_minutes.total_seconds() // 60
-                if minutes > 1: #через сколько минут назначать угощение
+                if minutes > 15: #через сколько минут назначать угощение
                     cursor.execute("UPDATE list_2 SET sur = %s WHERE number = %s", ('+', i[1]))
                     l.append(i[2])
                 conn.commit()
