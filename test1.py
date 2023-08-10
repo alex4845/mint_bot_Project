@@ -13,7 +13,7 @@ from admin_panel import admin_panel, gender, get_manager
 
 storage = MemoryStorage()
 
-bot = Bot('5917858144:AAHRyeAdLmAfuDsuZAAv5jUXs4U9cG3sa34')
+bot = Bot('6242827671:AAEeyBfWQo5bmaUy8U8jcV3ashJ7VU9fxkU')
 dp = Dispatcher(bot, storage=storage)
 
 @dp.message_handler(commands=['start'])
