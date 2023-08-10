@@ -78,7 +78,7 @@ async def interval():
     cursor = conn.cursor()
     t_n = datetime.now()
     t_n1 = datetime.now().strftime("%Y-%m-%d")
-    current_time = datetime.now().replace(hour=7, minute=0, second=0) #конец работы
+    current_time = datetime.now().replace(hour=6, minute=0, second=0) #конец работы
     current_time1 = datetime.now().replace(hour=22, minute=30, second=0) #начало работы
     if t_n > current_time and t_n < current_time1:
         cursor.execute('SELECT * FROM list_2')
@@ -128,7 +128,7 @@ async def interval():
                 time_1 = datetime.strptime(str(i[0]), "%Y-%m-%d %H:%M:%S.%f")
                 diff_minutes = t_n - time_1
                 minutes = diff_minutes.total_seconds() // 60
-                if minutes > 12: #через сколько минут назначать угощение
+                if minutes > 5: #через сколько минут назначать угощение
                     cursor.execute("UPDATE list_2 SET sur = %s WHERE number = %s", ('+', i[1]))
                     l.append(i[2])
                 conn.commit()

@@ -182,13 +182,14 @@ async def scheduled(wait_for):
                 filename = f'Отчет_{t_n1}.xlsx'
                 with open(f'reports/{filename}', 'rb') as file:
                     await bot.send_document(chat_id=469632258, document=file)# кому отправлять отчет
+                with open(f'reports/{filename}', 'rb') as file:
                     await bot.send_document(chat_id=686296818, document=file)
             else:
                 for i in l_sur:
                     await bot.send_message(i, 'Вам угощение! Уточняйте на баре. Приятного отдыха!')
 
 loop = asyncio.get_event_loop()
-loop.create_task(scheduled(300))
+loop.create_task(scheduled(200))
 executor.start_polling(dp, loop=loop, skip_updates=True)
 
 
