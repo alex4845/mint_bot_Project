@@ -128,7 +128,7 @@ async def interval():
                 time_1 = datetime.strptime(str(i[0]), "%Y-%m-%d %H:%M:%S.%f")
                 diff_minutes = t_n - time_1
                 minutes = diff_minutes.total_seconds() // 60
-                if minutes > 15: #через сколько минут назначать угощение
+                if minutes > 12: #через сколько минут назначать угощение
                     cursor.execute("UPDATE list_2 SET sur = %s WHERE number = %s", ('+', i[1]))
                     l.append(i[2])
                 conn.commit()
@@ -167,7 +167,7 @@ async def all_managers():
     conn = psycopg2.connect(host='141.8.199.12', port=5432, user='postgres',
                             password='20rasputin23', database='rasputin_base.db')
     cursor = conn.cursor()
-    b = ['man1', 'man2', 'man3', 'man4', 'man5']
+    b = ['Настя', 'Феми', 'Суворов', 'Марвин', 'Миша', 'Никто']
     rr = []
     for i in b:
         cursor.execute(f"SELECT COUNT(*) FROM list_1 WHERE manager = '{i}'")

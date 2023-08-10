@@ -20,10 +20,11 @@ async def gender(message: types.Message):
 
 async def get_manager(message: types.Message):
     keyboard = types.InlineKeyboardMarkup(row_width=1)
-    manager1 = types.InlineKeyboardButton(text='manager #1', callback_data='man1')
-    manager2 = types.InlineKeyboardButton(text='manager #2', callback_data='man2')
-    manager3 = types.InlineKeyboardButton(text='manager #3', callback_data='man3')
-    manager4 = types.InlineKeyboardButton(text='manager #4', callback_data='man4')
-    manager5 = types.InlineKeyboardButton(text='manager #5', callback_data='man5')
-    keyboard.add(manager1, manager2, manager3, manager4, manager5)
+    manager1 = types.InlineKeyboardButton(text='Настя', callback_data='Настя')
+    manager2 = types.InlineKeyboardButton(text='Феми', callback_data='Феми')
+    manager3 = types.InlineKeyboardButton(text='Суворов', callback_data='Суворов')
+    manager4 = types.InlineKeyboardButton(text='Марвин', callback_data='Марвин')
+    manager5 = types.InlineKeyboardButton(text='Миша', callback_data='Миша')
+    manager6 = types.InlineKeyboardButton(text='Никто', callback_data='Никто')
+    keyboard.add(manager1, manager2, manager3, manager4, manager5, manager6)
     await message.answer("Выберите своего менеджера. Заменить его можно только завтра!", reply_markup=keyboard)

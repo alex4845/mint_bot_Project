@@ -13,7 +13,7 @@ from admin_panel import admin_panel, gender, get_manager
 
 storage = MemoryStorage()
 
-bot = Bot('5873487596:AAF4SZzKOXe_YyF7_uUoNrWxyyChAEhPb3A')
+bot = Bot('5917858144:AAHRyeAdLmAfuDsuZAAv5jUXs4U9cG3sa34')
 dp = Dispatcher(bot, storage=storage)
 
 @dp.message_handler(commands=['start'])
@@ -26,8 +26,8 @@ async def info(message: types.Message):
     item5 = types.KeyboardButton("⭐ Best Manager")
     item6 = types.KeyboardButton("📲 Админ")
     markup.add(item1, item2, item3, item4, item5, item6)
-    await message.answer('Добро пожаловать! Это бот клуба RASPUTIN.'
-                         ' Заполните короткую анкету и получайте от нас угощение.', reply_markup=markup)
+    await message.answer('Добро пожаловать в БOT клуба RASPUTIN. Мы рады приветствовать Вас в нашем царском заведении.'
+                         ' Жмите кнопку "ЗАРЕГИСТРИРОВАТЬСЯ"  ⬇️ . До новых встреч!', reply_markup=markup)
 
 class FSMclient(StatesGroup):
     name = State()
@@ -144,7 +144,7 @@ async def process_button2(callback_query: types.CallbackQuery):
     await FSMadmin.id.set()
     await bot.send_message(callback_query.from_user.id, text='Введите ID клиента, которого хотите удалить')
 
-@dp.callback_query_handler(lambda c: c.data in ['man1', 'man2', 'man3', 'man4', 'man5'])
+@dp.callback_query_handler(lambda c: c.data in ['Настя', 'Феми', 'Суворов', 'Марвин', 'Миша', 'Никто'])
 async def process_manager(callback_query: types.CallbackQuery):
     await bot.delete_message(chat_id=callback_query.message.chat.id, message_id=callback_query.message.message_id)
     a = callback_query.data
@@ -178,11 +178,11 @@ async def scheduled(wait_for):
         l_sur = await interval()
         if l_sur:
             if l_sur == "fin":
-                chat_id = 469632258 # кому отправлять отчет
                 t_n1 = datetime.now().strftime("%Y-%m-%d")
                 filename = f'Отчет_{t_n1}.xlsx'
                 with open(f'reports/{filename}', 'rb') as file:
-                    await bot.send_document(chat_id=chat_id, document=file)
+                    await bot.send_document(chat_id=469632258, document=file)# кому отправлять отчет
+                    await bot.send_document(chat_id=686296818, document=file)
             else:
                 for i in l_sur:
                     await bot.send_message(i, 'Вам угощение! Уточняйте на баре. Приятного отдыха!')
