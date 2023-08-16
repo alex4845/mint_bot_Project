@@ -100,8 +100,10 @@ async def interval():
             for row_index, row_data in enumerate(data, start=3):
                 for col_index, col_data in enumerate(row_data, start=1):
                     sheet.cell(row=row_index, column=col_index, value=col_data)
-
-            sheet['M3'] = str(data_m)[1:-1]
+            m = 3
+            for x in data_m:
+                sheet[f'M{m}'] = str(x) + " : " + str(data_m[x])
+                m += 1
 
             for col_index, header in enumerate(headers, start=1):
                     column_letter = get_column_letter(col_index)
@@ -167,10 +169,10 @@ async def all_managers():
     conn = psycopg2.connect(host='141.8.199.12', port=5432, user='postgres',
                             password='20rasputin23', database='rasputin_base.db')
     cursor = conn.cursor()
-    b = ['Настя', 'Феми', 'Суворов', 'Марвин', 'Миша', 'Никто']
+    b = ['Настя', 'Феми', 'Суворов', 'Марвин', 'Миша', 'Денис', 'Никто']
     rr = []
     for i in b:
-        cursor.execute(f"SELECT COUNT(*) FROM list_1 WHERE manager = '{i}'")
+        cursor.execute(f"SELECT COUNT(*) FROM list_2 WHERE manager = '{i}'")
         r = cursor.fetchone()
         rr.append(r[0])
     rrr = dict(zip(b, rr))

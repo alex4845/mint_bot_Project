@@ -144,7 +144,7 @@ async def process_button2(callback_query: types.CallbackQuery):
     await FSMadmin.id.set()
     await bot.send_message(callback_query.from_user.id, text='Введите ID клиента, которого хотите удалить')
 
-@dp.callback_query_handler(lambda c: c.data in ['Настя', 'Феми', 'Суворов', 'Марвин', 'Миша', 'Никто'])
+@dp.callback_query_handler(lambda c: c.data in ['Настя', 'Феми', 'Суворов', 'Марвин', 'Миша', 'Денис', 'Никто'])
 async def process_manager(callback_query: types.CallbackQuery):
     await bot.delete_message(chat_id=callback_query.message.chat.id, message_id=callback_query.message.message_id)
     a = callback_query.data
